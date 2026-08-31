@@ -11,3 +11,5 @@ Organize and Govern Data with Knowledge Catalog: Challenge Lab (ARC117)
 Analyze Images with the Cloud Vision API: Challenge Lab (ARC122)
 
 Analyze Speech and Language with Google APIs: Challenge Lab (ARC114)
+
+Automate Data Capture at Scale with Document AI: Challenge Lab (GSP367)
