@@ -4,6 +4,8 @@ Google cloud labs and walkthrough
 
 LABS:
 
+Create and Manage AlloyDB Instances: Challenge Lab (GSP395)
+
 Create a Secure Data Lake on Cloud Storage: Challenge Lab (ARC119)
 
 Monitoring in Google Cloud: Challenge Lab (ARC115)
