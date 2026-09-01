@@ -18,4 +18,6 @@ Build Event-Driven Applications with Eventarc: Challenge Lab (ARC118)
 
 Build a Secure Google Cloud Network: Challenge Lab (GSP322)
 
+Build a Website on Google Cloud: Challenge Lab (GSP319)
+
 
