@@ -6,6 +6,8 @@ LABS:
 
 Create and Manage AlloyDB Instances: Challenge Lab (GSP395)
 
+Deploy Kubernetes Applications on Google Cloud: Challenge Lab (GSP318)
+
 Create a Secure Data Lake on Cloud Storage: Challenge Lab (ARC119)
 
 Monitoring in Google Cloud: Challenge Lab (ARC115)
