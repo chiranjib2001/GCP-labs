@@ -22,6 +22,8 @@ Build a Website on Google Cloud: Challenge Lab (GSP319)
 
 Configure Service Accounts and IAM Roles for Google Cloud: Challenge Lab (ARC134)
 
+Create ML Models with BigQuery ML: Challenge Lab (GSP341)
+
 
 
 
