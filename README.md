@@ -16,4 +16,6 @@ Automate Data Capture at Scale with Document AI: Challenge Lab (GSP367)
 
 Build Event-Driven Applications with Eventarc: Challenge Lab (ARC118)
 
+Build a Secure Google Cloud Network: Challenge Lab (GSP322)
+
 
