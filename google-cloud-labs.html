@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Cloud Skill Badges Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; padding: 16px; line-height: 1.4; }
+  h1 { text-align: center; margin-bottom: 6px; color: #38bdf8; font-size: 1.6rem; }
+  .subtitle { text-align: center; color: #94a3b8; margin-bottom: 16px; font-size: 0.9rem; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; align-items: center; }
+  input[type="search"] { padding: 9px 14px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; width: 260px; font-size: 0.95rem; }
+  .stats { background: #1e293b; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; }
+  table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  th { background: #0ea5e9; color: #0f172a; padding: 11px 8px; text-align: left; font-weight: 700; position: sticky; top: 0; z-index: 10; font-size: 0.9rem; }
+  td { padding: 8px; border-bottom: 1px solid #334155; vertical-align: middle; font-size: 0.92rem; }
+  tr:hover { background: #334155; }
+  tr.completed { background: #14532d !important; }
+  tr.completed td { color: #bbf7d0; }
+  tr.flagged { background: #7c2d12 !important; }
+  tr.flagged td { color: #fed7aa; }
+  a { color: #38bdf8; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .check, .flag { width: 20px; height: 20px; cursor: pointer; }
+  .check { accent-color: #22c55e; }
+  .flag { accent-color: #f97316; }
+  .num { width: 36px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+  .actions { text-align: center; width: 60px; }
+  .comment-input {
+    width: 100%;
+    min-width: 160px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #475569;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+  }
+  .comment-input:focus { outline: none; border-color: #38bdf8; }
+  button { background: #0ea5e9; color: #0f172a; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+  button:hover { background: #38bdf8; }
+  .reset { background: #ef4444; color: white; }
+  @media (max-width: 900px) {
+    th:nth-child(3), td:nth-child(3) { display: none; }
+    .comment-input { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+  <h1>Google Cloud Skill Badges Tracker</h1>
+  <p class="subtitle">
+    ✅ Done → green + moves to bottom &nbsp;·&nbsp;
+    🚩 Later → orange &nbsp;·&nbsp;
+    Comments with Later items sort <strong>above</strong> empty Later items
+  </p>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="Search labs..." oninput="filterTable()">
+    <div class="stats" id="stats">0 / 93 completed</div>
+    <button onclick="resetAll()" class="reset">Reset All</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="num">#</th>
+        <th>Lab / Skill Badge</th>
+        <th>Link</th>
+        <th>Comments / Extra Link</th>
+        <th class="actions">✅ Done</th>
+        <th class="actions">🚩 Later</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+<script>
+const labs = [
+  ["Analyze BigQuery Data in Connected Sheets", "https://www.skills.google/course_templates/632"],
+  ["Analyze Images with the Cloud Vision API", "https://www.skills.google/course_templates/633"],
+  ["Analyze Sentiment with Natural Language API", "https://www.skills.google/course_templates/667"],
+  ["Analyze Speech and Language with Google APIs", "https://www.skills.google/course_templates/634"],
+  ["Analyze and Reason on Multimodal Data with Gemini", "https://www.skills.google/course_templates/1240"],
+  ["App Building with AppSheet", "https://www.skills.google/course_templates/635"],
+  ["Automate Data Capture at Scale with Document AI", "https://www.skills.google/course_templates/674"],
+  ["Build Event-Driven Applications with Eventarc", "https://www.skills.google/course_templates/727"],
+  ["Build Global and Regional Load Balancing Solutions", "https://www.skills.google/course_templates/1558"],
+  ["Build Google Cloud Infrastructure for AWS Professionals", "https://www.skills.google/course_templates/687"],
+  ["Build Infrastructure with Terraform on Google Cloud", "https://www.skills.google/course_templates/636"],
+  ["Build LookML Objects in Looker", "https://www.skills.google/course_templates/639"],
+  ["Build Real World AI Applications with Gemini and Imagen", "https://www.skills.google/course_templates/1076"],
+  ["Build Serverless Applications with Cloud Run Functions", "https://www.skills.google/course_templates/696"],
+  ["Build a Data Mesh with Knowledge Catalog", "https://www.skills.google/course_templates/681"],
+  ["Build a Data Warehouse with BigQuery", "https://www.skills.google/course_templates/624"],
+  ["Build a Secure Google Cloud Network", "https://www.skills.google/course_templates/654"],
+  ["Build a Smart Cloud Application with Vibe Coding and MCP", "https://www.skills.google/course_templates/1459"],
+  ["Build a Website on Google Cloud", "https://www.skills.google/course_templates/638"],
+  ["Cloud Architecture: Design, Implement, and Manage", "https://www.skills.google/course_templates/640"],
+  ["Configure Service Accounts and IAM Roles for Google Cloud", "https://www.skills.google/course_templates/702"],
+  ["Connecting Cloud Networks with NCC", "https://www.skills.google/course_templates/1364"],
+  ["Create ML Models with BigQuery ML", "https://www.skills.google/course_templates/626"],
+  ["Create Your First Gemini Enterprise Application", "https://www.skills.google/course_templates/1586"],
+  ["Create a Secure Data Lake on Cloud Storage", "https://www.skills.google/course_templates/704"],
+  ["Create a Streaming Data Lake on Cloud Storage", "https://www.skills.google/course_templates/705"],
+  ["Create and Manage AlloyDB Instances", "https://www.skills.google/course_templates/642"],
+  ["Create and Manage Bigtable Instances", "https://www.skills.google/course_templates/650"],
+  ["Create and Manage Cloud SQL for PostgreSQL Instances", "https://www.skills.google/course_templates/652"],
+  ["Create and Manage Cloud Spanner Instances", "https://www.skills.google/course_templates/643"],
+  ["Deploy Kubernetes Applications on Google Cloud", "https://www.skills.google/course_templates/663"],
+  ["Deploy Multi-Agent Architectures", "https://www.skills.google/course_templates/1445"],
+  ["Deploy and Manage Apigee X", "https://www.skills.google/course_templates/661"],
+  ["Deploy and Manage Applications on Google App Engine", "https://www.skills.google/course_templates/671"],
+  ["Deploy and Secure Serverless APIs with API Gateway", "https://www.skills.google/course_templates/662"],
+  ["Derive Insights from BigQuery Data", "https://www.skills.google/course_templates/623"],
+  ["Develop AI-Powered Prototypes in Google AI Studio", "https://www.skills.google/course_templates/1426"],
+  ["Develop Gen AI Apps with Gemini and Streamlit", "https://www.skills.google/course_templates/978"],
+  ["Develop Serverless Applications on Cloud Run", "https://www.skills.google/course_templates/741"],
+  ["Develop Serverless Apps with Firebase", "https://www.skills.google/course_templates/649"],
+  ["Develop Your Google Cloud Network", "https://www.skills.google/course_templates/625"],
+  ["Develop and Secure APIs with Apigee X", "https://www.skills.google/course_templates/714"],
+  ["Develop with Apps Script and AppSheet", "https://www.skills.google/course_templates/715"],
+  ["Discover and Protect Sensitive Data Across Your Ecosystem", "https://www.skills.google/course_templates/1177"],
+  ["Engineer AI Agents with Agent Development Kit (ADK)", "https://www.skills.google/course_templates/1596"],
+  ["Engineer Data for Predictive Modeling with BigQuery ML", "https://www.skills.google/course_templates/627"],
+  ["Enhance Gemini Model Capabilities", "https://www.skills.google/course_templates/1241"],
+  ["Enrich Metadata and Discovery of Lakehouse Data", "https://www.skills.google/course_templates/753"],
+  ["Explore Generative AI in Agent Platform", "https://www.skills.google/course_templates/959"],
+  ["Get Started with Sensitive Data Protection", "https://www.skills.google/course_templates/750"],
+  ["Google DeepMind: Train A Small Language Model", "https://www.skills.google/course_templates/1453"],
+  ["Implement CI/CD Pipelines on Google Cloud", "https://www.skills.google/course_templates/691"],
+  ["Implement Cloud Collaboration and Productivity Workflows", "https://www.skills.google/course_templates/676"],
+  ["Implement Cloud Security Fundamentals on Google Cloud", "https://www.skills.google/course_templates/645"],
+  ["Implement Cloud Storage and Data Protection Solutions", "https://www.skills.google/course_templates/725"],
+  ["Implement DevOps Workflows in Google Cloud", "https://www.skills.google/course_templates/716"],
+  ["Implement Event-Driven Messaging and Automation Workflows", "https://www.skills.google/course_templates/728"],
+  ["Implement Multimodal Vector Search with BigQuery", "https://www.skills.google/course_templates/1232"],
+  ["Implement Speech and Language Solutions with Pre-trained APIs", "https://www.skills.google/course_templates/700"],
+  ["Implementing Cloud Load Balancing for Compute Engine", "https://www.skills.google/course_templates/648"],
+  ["Inspect Rich Documents with Gemini Multimodality and Multimodal RAG", "https://www.skills.google/course_templates/981"],
+  ["Integrate BigQuery Data and Google Workspace using Apps Script", "https://www.skills.google/course_templates/737"],
+  ["Kickstarting Application Development with Gemini Code Assist", "https://www.skills.google/course_templates/1399"],
+  ["Manage Data Models in Looker", "https://www.skills.google/course_templates/651"],
+  ["Manage Kubernetes in Google Cloud", "https://www.skills.google/course_templates/783"],
+  ["Migrate MySQL Data to Cloud SQL Using Database Migration Service", "https://www.skills.google/course_templates/629"],
+  ["Mitigate Threats and Vulnerabilities with Security Command Center", "https://www.skills.google/course_templates/759"],
+  ["Monitor Environments with Google Cloud Managed Service for Prometheus", "https://www.skills.google/course_templates/761"],
+  ["Monitor and Log with Google Cloud Observability", "https://www.skills.google/course_templates/749"],
+  ["Monitor and Manage Google Cloud Resources", "https://www.skills.google/course_templates/653"],
+  ["Monitoring in Google Cloud", "https://www.skills.google/course_templates/747"],
+  ["Optimize Costs for Google Kubernetes Engine", "https://www.skills.google/course_templates/655"],
+  ["Orchestrate Multi-agent Workflows with Gemini Enterprise", "https://www.skills.google/course_templates/1682"],
+  ["Organize and Govern Data with Knowledge Catalog", "https://www.skills.google/course_templates/726"],
+  ["Perform Predictive Data Analysis in BigQuery", "https://www.skills.google/course_templates/656"],
+  ["Prepare Data for Looker Dashboards and Reports", "https://www.skills.google/course_templates/628"],
+  ["Prepare Data for ML APIs on Google Cloud", "https://www.skills.google/course_templates/631"],
+  ["Privileged Access with IAM", "https://www.skills.google/course_templates/1337"],
+  ["Prompt Design in Agent Platform", "https://www.skills.google/course_templates/976"],
+  ["Protect Cloud Traffic with Chrome Enterprise Premium Security", "https://www.skills.google/course_templates/784"],
+  ["Secure Lakehouse Data", "https://www.skills.google/course_templates/751"],
+  ["Secure Software Delivery", "https://www.skills.google/course_templates/1164"],
+  ["Set Up a Google Cloud Network", "https://www.skills.google/course_templates/641"],
+  ["Set Up an App Dev Environment on Google Cloud", "https://www.skills.google/course_templates/637"],
+  ["Share Data Using Google Data Cloud", "https://www.skills.google/course_templates/657"],
+  ["Store, Process, and Manage Data on Google Cloud - Command Line", "https://www.skills.google/course_templates/659"],
+  ["Store, Process, and Manage Data on Google Cloud - Console", "https://www.skills.google/course_templates/658"],
+  ["Streaming Analytics into BigQuery", "https://www.skills.google/course_templates/752"],
+  ["The Basics of Google Cloud Compute", "https://www.skills.google/course_templates/754"],
+  ["Use APIs to Work with Cloud Storage", "https://www.skills.google/course_templates/755"],
+  ["Use Functions, Formulas, and Charts in Google Sheets", "https://www.skills.google/course_templates/776"],
+  ["Use Machine Learning APIs on Google Cloud", "https://www.skills.google/course_templates/630"],
+  ["Using the Google Cloud Speech API", "https://www.skills.google/course_templates/756"]
+];
+
+const STORAGE_KEY = "gcloud_labs_progress_v2";
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function render() {
+  const state = loadState();
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  // Sort order:
+  // 0 = not done, not flagged
+  // 1 = flagged + has comments
+  // 2 = flagged + no comments
+  // 3 = done
+  const indexed = labs.map((lab, i) => ({ name: lab[0], link: lab[1], idx: i }));
+  indexed.sort((a, b) => {
+    const sa = state[a.idx] || {};
+    const sb = state[b.idx] || {};
+
+    const score = (s) => {
+      if (s.done) return 3;
+      if (s.flag) {
+        return (s.comment && s.comment.trim()) ? 1 : 2;
+      }
+      return 0;
+    };
+
+    return score(sa) - score(sb) || a.idx - b.idx;
+  });
+
+  let doneCount = 0;
+  indexed.forEach((item, displayIdx) => {
+    const st = state[item.idx] || {};
+    if (st.done) doneCount++;
+
+    const tr = document.createElement("tr");
+    if (st.done) tr.classList.add("completed");
+    else if (st.flag) tr.classList.add("flagged");
+
+    tr.innerHTML = `
+      <td class="num">${displayIdx + 1}</td>
+      <td>${item.name}</td>
+      <td><a href="${item.link}" target="_blank" rel="noopener">${item.link.replace("https://www.skills.google/course_templates/", "")}</a></td>
+      <td>
+        <input type="text" class="comment-input" data-idx="${item.idx}"
+               placeholder="Paste link or note..."
+               value="${(st.comment || "").replace(/"/g, '&quot;')}">
+      </td>
+      <td class="actions"><input type="checkbox" class="check" data-idx="${item.idx}" ${st.done ? "checked" : ""}></td>
+      <td class="actions"><input type="checkbox" class="flag" data-idx="${item.idx}" ${st.flag ? "checked" : ""}></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("stats").textContent = `${doneCount} / ${labs.length} completed`;
+
+  // Done checkbox
+  document.querySelectorAll(".check").forEach(cb => {
+    cb.addEventListener("change", e => {
+      const idx = +e.target.dataset.idx;
+      const st = loadState();
+      st[idx] = st[idx] || {};
+      st[idx].done = e.target.checked;
+      if (e.target.checked) st[idx].flag = false;
+      saveState(st);
+      render();
+    });
+  });
+
+  // Flag checkbox
+  document.querySelectorAll(".flag").forEach(cb => {
+    cb.addEventListener("change", e => {
+      const idx = +e.target.dataset.idx;
+      const st = loadState();
+      st[idx] = st[idx] || {};
+      st[idx].flag = e.target.checked;
+      if (e.target.checked) st[idx].done = false;
+      saveState(st);
+      render();
+    });
+  });
+
+  // Comments (save on change + blur)
+  document.querySelectorAll(".comment-input").forEach(input => {
+    const saveComment = (e) => {
+      const idx = +e.target.dataset.idx;
+      const st = loadState();
+      st[idx] = st[idx] || {};
+      st[idx].comment = e.target.value;
+      saveState(st);
+      // Re-render only if sorting might change (i.e. when flagged)
+      if (st[idx].flag) render();
+    };
+    input.addEventListener("change", saveComment);
+    input.addEventListener("blur", saveComment);
+  });
+}
+
+function filterTable() {
+  const q = document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#tbody tr").forEach(tr => {
+    const name = tr.children[1].textContent.toLowerCase();
+    const comment = (tr.querySelector(".comment-input")?.value || "").toLowerCase();
+    tr.style.display = (name.includes(q) || comment.includes(q)) ? "" : "none";
+  });
+}
+
+function resetAll() {
+  if (confirm("Clear all progress and comments?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
